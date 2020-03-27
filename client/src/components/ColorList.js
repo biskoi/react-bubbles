@@ -6,10 +6,11 @@ const initialColor = {
   code: { hex: "" }
 };
 
-const ColorList = ({ colors, updateColors }) => {
+const ColorList = ({ colors, updateColors, getData }) => {
   console.log(colors);
   const [editing, setEditing] = useState(false);
   const [colorToEdit, setColorToEdit] = useState(initialColor);
+  const [newColor, setNewColor] = useState(initialColor);
 
   const editColor = color => {
     setEditing(true);
@@ -21,11 +22,17 @@ const ColorList = ({ colors, updateColors }) => {
     // Make a put request to save your updated color
     // think about where will you get the id from...
     // where is is saved right now? colorToEdit
-    console.log(colorToEdit)
+
+
     axiosWithAuth()
     .put(`colors/${colorToEdit.id}`, colorToEdit)
-    .then(res => console.log(res))
-    .catch(err => console.log(err))
+    .then(res => {
+      setColorToEdit(initialColor);
+      setEditing(false);
+      getData(); // could've filtered and used updateColors instead but I want stretch and sleep
+    })
+    .catch(err => console.log(err));
+
   };
 
   const deleteColor = color => {
@@ -36,6 +43,32 @@ const ColorList = ({ colors, updateColors }) => {
     .catch(err => console.log(err))
   };
 
+  const onSubmit = (e) => {
+    e.preventDefault();
+    axiosWithAuth()
+    .post('colors', newColor)
+    .then(res => getData())
+    .catch(err => console.log(err));
+  }
+
+  const onChange = (e) => {
+    if (e.target.name === 'color') {
+      setNewColor({
+      ...newColor,
+      [e.target.name]: e.target.value
+      });
+    } else {
+      setNewColor({
+        ...newColor,
+        code: {
+          ...newColor.code,
+          hex: e.target.value
+        }
+      })
+    }
+    console.log(newColor)
+  }
+
   return (
     <div className="colors-wrap">
       <p>colors</p>
@@ -45,10 +78,11 @@ const ColorList = ({ colors, updateColors }) => {
             <span>
               <span className="delete" onClick={e => {
                     e.stopPropagation();
-                    deleteColor(color)
+                    deleteColor(color);
+                    getData();
                   }
                 }>
-                  x
+                  [x]
               </span>{" "}
               {color.color}
             </span>
@@ -91,6 +125,14 @@ const ColorList = ({ colors, updateColors }) => {
       )}
       <div className="spacer" />
       {/* stretch - build another form here to add a color */}
+      <form onSubmit = {onSubmit}>
+        <p>Add a color</p>
+        <label name = 'color'>Color Name</label>
+        <input htmlFor = 'color' name = 'color' onChange = {onChange} value = {newColor.color}/>
+        <label name = 'hex'>Hex</label>
+        <input htmlFor = 'hex' name = 'hex' onChange = {onChange} value = {newColor.code.hex}/>
+        <button>submit</button>
+      </form>
     </div>
   );
 };
